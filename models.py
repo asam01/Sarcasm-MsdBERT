@@ -223,7 +223,8 @@ class MsdBERT(nn.Module):
         # b*49*768
         visual = self.vismap2text(vis_embed_map)
         # b*75*768
-        image_text_cross_attn = self.text2image_attention(sequence_output, visual, extended_img_mask)
+        # image_text_cross_attn = self.text2image_attention(sequence_output, visual, extended_img_mask)
+        image_text_cross_attn = self.text2image_attention(visual, sequence_output, extended_img_mask)
         # b*75*12
         C = self.tanh(torch.matmul(torch.matmul(sequence_output, self.W_b), hashtag_output.transpose(1,2)))
         # C: b*12
