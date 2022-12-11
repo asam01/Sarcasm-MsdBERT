@@ -103,7 +103,7 @@ def main():
     n_gpu = torch.cuda.device_count()
     logger.info("device: {} n_gpu: {}".format(device, n_gpu))
 
-    logger.info("************** Using: " + torch.cuda.get_device_name(0) + " ******************")
+    # logger.info("************** Using: " + torch.cuda.get_device_name(0) + " ******************")
     # set seed val
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -269,8 +269,13 @@ def main():
                 max_acc = eval_accuracy
 
     if args.do_test:
-        model.load_state_dict(torch.load(output_model_file))
-        encoder.load_state_dict(torch.load(output_encoder_file))
+        if torch.cuda.is_available():
+            model.load_state_dict(torch.load(output_model_file))
+            encoder.load_state_dict(torch.load(output_encoder_file))
+        else:
+            model.load_state_dict(torch.load(output_model_file, map_location=torch.device('cpu')))
+            encoder.load_state_dict(torch.load(output_encoder_file, map_location=torch.device('cpu')))
+
         model.to(device)
         encoder.to(device)
         model.eval()
@@ -283,9 +288,9 @@ def main():
         test_features = processor.convert_mm_examples_to_features(test_examples, label_list, tokenizer)
 
         test_input_ids, test_input_mask, test_added_input_mask, test_img_feats, \
-        test_hashtag_input_ids, test_hashtag_input_mask, test_label_ids = test_features
+        test_hashtag_input_ids, test_hashtag_input_mask, test_label_ids, test_img_ids = test_features
         test_data = TensorDataset(test_input_ids, test_input_mask, test_added_input_mask, test_img_feats, \
-                                  test_hashtag_input_ids, test_hashtag_input_mask, test_label_ids)
+                                  test_hashtag_input_ids, test_hashtag_input_mask, test_label_ids, test_img_ids)
         test_dataloader = DataLoader(test_data, sampler=SequentialSampler(test_data), batch_size=args.eval_batch_size)
 
         eval_loss, eval_accuracy = 0, 0
@@ -294,14 +299,18 @@ def main():
         pred_label_list = []
         for batch in test_dataloader:
             batch = tuple(t.to(device) for t in batch)
+
             test_input_ids, test_input_mask, test_added_input_mask, test_img_feats, \
-            test_hashtag_input_ids, test_hashtag_input_mask, test_label_ids = batch
+            test_hashtag_input_ids, test_hashtag_input_mask, test_label_ids, test_img_ids = batch
+            
+            # print("test img ids: ", test_img_ids)
+
             imgs_f, img_mean, test_img_att = encoder(test_img_feats)
             with torch.no_grad():
                 tmp_eval_loss = model(test_input_ids,test_img_att, test_input_mask, test_added_input_mask, \
-                                      test_hashtag_input_ids, test_hashtag_input_mask, test_label_ids)
+                                      test_hashtag_input_ids, test_hashtag_input_mask, test_label_ids, img_ids=test_img_ids)
                 logits = model(test_input_ids, test_img_att, test_input_mask, test_added_input_mask, \
-                               test_hashtag_input_ids, test_hashtag_input_mask)
+                               test_hashtag_input_ids, test_hashtag_input_mask, img_ids=test_img_ids)
             logits = logits.detach().cpu().numpy()
             label_ids = test_label_ids.to('cpu').numpy()
             true_label_list.append(label_ids)
@@ -313,6 +322,9 @@ def main():
 
             nb_eval_examples += test_input_ids.size(0)
             nb_eval_steps += 1
+
+            # break #TODO: COMMENT THIS OUT LATER
+
         eval_loss = eval_loss / nb_eval_steps
         eval_accuracy = eval_accuracy / nb_eval_examples
         loss = train_loss if args.do_train else None
@@ -328,6 +340,7 @@ def main():
                   'f_score': F_score,
                   'train_loss': loss}
 
+        """
         pred_label = np.argmax(pred_outputs, axis=-1)
         fout_p = open(os.path.join(args.output_dir, "pred.txt"), 'w')
         fout_t = open(os.path.join(args.output_dir, "true.txt"), 'w')
@@ -347,7 +360,7 @@ def main():
             for key in sorted(result.keys()):
                 logger.info("  %s = %s", key, str(result[key]))
                 writer.write("%s = %s\n" % (key, str(result[key])))
-
+        """
 
 if __name__ == "__main__":
     main()

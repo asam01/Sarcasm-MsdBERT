@@ -27,7 +27,8 @@ class MMInputFeatures(object):
                  img_feat,
                  hashtag_input_ids,
                  hashtag_input_mask,
-                 label_id):
+                 label_id,
+                 image_id):
         self.input_ids = input_ids
         self.input_mask = input_mask
         self.added_input_mask = added_input_mask
@@ -35,6 +36,7 @@ class MMInputFeatures(object):
         self.hashtag_input_ids = hashtag_input_ids
         self.hashtag_input_mask = hashtag_input_mask
         self.label_id = label_id
+        self.image_id = image_id
 
 
 class Processer():
@@ -190,7 +192,8 @@ class Processer():
                                             img_feat=image,
                                             hashtag_input_ids=hashtag_input_ids,
                                             hashtag_input_mask=hashtag_input_mask,
-                                            label_id=label_id))
+                                            label_id=label_id,
+                                            image_id=int(example.img_id)))
             if ex_index % 1000 == 0:
                 logger.info("processed image num: " + str(ex_index) + " **********")
         all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
@@ -200,4 +203,5 @@ class Processer():
         all_hashtag_input_ids = torch.tensor([f.hashtag_input_ids for f in features], dtype=torch.long)
         all_hashtag_input_mask = torch.tensor([f.hashtag_input_mask for f in features], dtype=torch.long)
         all_label_ids = torch.tensor([f.label_id for f in features], dtype=torch.long)
-        return all_input_ids, all_input_mask, all_added_input_mask, all_img_feats, all_hashtag_input_ids, all_hashtag_input_mask, all_label_ids
+        all_image_ids = torch.tensor([f.image_id for f in features], dtype=torch.long)
+        return all_input_ids, all_input_mask, all_added_input_mask, all_img_feats, all_hashtag_input_ids, all_hashtag_input_mask, all_label_ids, all_image_ids

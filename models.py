@@ -103,6 +103,7 @@ class BertCoAttention(nn.Module):
         # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))  # b*12*75*49
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)  # b*12*75*49
+        print("attention scores: ", attention_scores.shape)
         # Apply the attention mask is (precomputed for all layers in BertModel forward() function)
         attention_scores = attention_scores + s2_attention_mask
         # atention_scores b*12*75*49
@@ -157,6 +158,9 @@ class BertCrossAttention(nn.Module):
         self.output = BertSelfOutput()
 
     def forward(self, s1_input_tensor, s2_input_tensor, s2_attention_mask):
+        print("s1 shape: ", s1_input_tensor.shape)
+        print("s2 shape: ", s2_input_tensor.shape)
+        print("s2 shape: ", s2_attention_mask.shape)
         s1_cross_output = self.bertCoAttn(s1_input_tensor, s2_input_tensor, s2_attention_mask)
         attention_output = self.output(s1_cross_output, s1_input_tensor)
         return attention_output
@@ -205,7 +209,7 @@ class MsdBERT(nn.Module):
         self.W_b = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(768, 768)))
 
     def forward(self, input_ids, visual_embeds_att, input_mask, added_attention_mask, hashtag_input_ids,
-                hashtag_input_mask, labels=None):
+                hashtag_input_mask, labels=None, img_ids=None):
         sequence_output, pooled_output = self.bert(input_ids=input_ids, token_type_ids=None, attention_mask=input_mask)
         hashtag_output, hashtag_pooled_output = self.hashtag_bert(input_ids=hashtag_input_ids, token_type_ids=None,
                                                                   attention_mask=hashtag_input_mask)
@@ -224,7 +228,7 @@ class MsdBERT(nn.Module):
         visual = self.vismap2text(vis_embed_map)
         # b*75*768
         # image_text_cross_attn = self.text2image_attention(sequence_output, visual, extended_img_mask)
-        image_text_cross_attn = self.text2image_attention(visual, sequence_output, extended_img_mask)
+        image_text_cross_attn = self.text2image_attention(visual, sequence_output, extended_img_mask) #switched q and k/v
         # b*75*12
         C = self.tanh(torch.matmul(torch.matmul(sequence_output, self.W_b), hashtag_output.transpose(1,2)))
         # C: b*12
@@ -232,6 +236,18 @@ class MsdBERT(nn.Module):
         attn = F.softmax(C, dim=-1)
         # b*1*768
         hashtag_text_cross_attn = torch.matmul(attn.unsqueeze(1), hashtag_output)
+        
+        # TODO: SAVE NPY OF HASHTAG_TEXT
+        """
+        print(hashtag_text_cross_attn.shape)
+        print(img_ids.shape)
+        if (img_ids != None):
+            for i in range(len(img_ids)):
+                img_id = img_ids[i].item()
+                print("saving img id: ", img_id)
+                torch.save(torch.unsqueeze(hashtag_text_cross_attn[i], 0), "text_embeds/"+str(img_id)+".pt")
+        """
+
         # b*1*768
         image_text_pooled_output = self.image_text_pooler(image_text_cross_attn)
         pooled_output = torch.cat([image_text_pooled_output, hashtag_text_cross_attn.squeeze(1)], dim=-1)
