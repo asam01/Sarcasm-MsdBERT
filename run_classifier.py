@@ -172,13 +172,13 @@ def main():
         eval_features = processor.convert_mm_examples_to_features(eval_examples, label_list, tokenizer)
 
         train_input_ids, train_input_mask, train_added_input_mask, train_img_feats, \
-        train_hashtag_input_ids, train_hashtag_input_mask, train_label_ids = train_features
+        train_hashtag_input_ids, train_hashtag_input_mask, train_label_ids, train_img_ids = train_features
         train_data = TensorDataset(train_input_ids, train_input_mask, train_added_input_mask, train_img_feats, \
                                    train_hashtag_input_ids, train_hashtag_input_mask, train_label_ids)
         train_dataloader = DataLoader(train_data, sampler=RandomSampler(train_data), batch_size=args.train_batch_size)
 
         eval_input_ids, eval_input_mask, eval_added_input_mask, eval_img_feats, \
-        eval_hashtag_input_ids, eval_hashtag_input_mask, eval_label_ids = eval_features
+        eval_hashtag_input_ids, eval_hashtag_input_mask, eval_label_ids, eval_img_ids = eval_features
         eval_data = TensorDataset(eval_input_ids, eval_input_mask, eval_added_input_mask, eval_img_feats, \
                                   eval_hashtag_input_ids, eval_hashtag_input_mask, eval_label_ids)
         eval_dataloader = DataLoader(eval_data, sampler=SequentialSampler(eval_data), batch_size=args.eval_batch_size)

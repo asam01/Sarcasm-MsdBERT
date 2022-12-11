@@ -103,7 +103,7 @@ class BertCoAttention(nn.Module):
         # Take the dot product between "query" and "key" to get the raw attention scores.
         attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))  # b*12*75*49
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)  # b*12*75*49
-        print("attention scores: ", attention_scores.shape)
+        # print("attention scores: ", attention_scores.shape)
         # Apply the attention mask is (precomputed for all layers in BertModel forward() function)
         attention_scores = attention_scores + s2_attention_mask
         # atention_scores b*12*75*49
@@ -158,9 +158,9 @@ class BertCrossAttention(nn.Module):
         self.output = BertSelfOutput()
 
     def forward(self, s1_input_tensor, s2_input_tensor, s2_attention_mask):
-        print("s1 shape: ", s1_input_tensor.shape)
-        print("s2 shape: ", s2_input_tensor.shape)
-        print("s2 shape: ", s2_attention_mask.shape)
+        # print("s1 shape: ", s1_input_tensor.shape)
+        # print("s2 shape: ", s2_input_tensor.shape)
+        # print("s2 shape: ", s2_attention_mask.shape)
         s1_cross_output = self.bertCoAttn(s1_input_tensor, s2_input_tensor, s2_attention_mask)
         attention_output = self.output(s1_cross_output, s1_input_tensor)
         return attention_output
@@ -215,7 +215,7 @@ class MsdBERT(nn.Module):
                                                                   attention_mask=hashtag_input_mask)
         # added_attention_mask batch_size*124
         # img_mask # b*49
-        img_mask = added_attention_mask[:, :49]
+        img_mask = input_mask #added_attention_mask[:, :49]
         # img_mask # b*1*1*49
         extended_img_mask = img_mask.unsqueeze(1).unsqueeze(2)
         extended_img_mask = extended_img_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
