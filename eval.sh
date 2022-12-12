@@ -16,5 +16,5 @@ export TQDM_DISABLE=1
 
 PYTHONIOENCODING=utf-8 CUDA_VISIBLE_DEVICES=1 python run_classifier.py \
     --data_dir ./data/ --image_dir /projects/tir3/users/nnishika/MML/data-of-multimodal-sarcasm-detection/dataset_image/ \
-    --output_dir ./output/MsdBERT_output/ \
+    --output_dir ./output/MsdBERT_output_switched_epoch1/ \
     --do_test

@@ -340,7 +340,7 @@ def main():
                   'f_score': F_score,
                   'train_loss': loss}
 
-        """
+        
         pred_label = np.argmax(pred_outputs, axis=-1)
         fout_p = open(os.path.join(args.output_dir, "pred.txt"), 'w')
         fout_t = open(os.path.join(args.output_dir, "true.txt"), 'w')
@@ -360,7 +360,7 @@ def main():
             for key in sorted(result.keys()):
                 logger.info("  %s = %s", key, str(result[key]))
                 writer.write("%s = %s\n" % (key, str(result[key])))
-        """
+        
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,6 @@
+f_score = 0.3757450116610521
+precision = 0.30095475300954755
+recall = 0.5
+test_accuracy = 0.6019095060190951
+test_loss = 0.6755444739038581
+train_loss = None
